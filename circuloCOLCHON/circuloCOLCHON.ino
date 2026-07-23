@@ -19,14 +19,16 @@
 
 #define MIN_PAUSA 1000
 #define MAX_PAUSA 4000
-#define MIN_INFLACION 3000
-#define MAX_INFLACION 20000
+#define MIN_INFLACION  3000
+#define MAX_INFLACION  20000
 #define MIN_ASPIRACION 3000
 #define MAX_ASPIRACION 20000
 
 #define MODO_PAUSA 0
 #define MODO_INFLACION 1
-#define MODO_ASPIRACION -1
+#define MODO_ASPIRACION 2
+
+#define RETARDO 100
 
 int modo;
 unsigned long tiempo_ini;
@@ -49,7 +51,7 @@ void setup() {
 
   // Se inicia con la pausa mínima
   modo = MODO_PAUSA;
-  tiempo_ini = millis();
+  tiempo_ini = millis(); + RETARDO;
   tiempo_fin = tiempo_ini + random(MIN_PAUSA, MAX_PAUSA);
 
   // Inicialización del puerto serial
@@ -65,7 +67,9 @@ void setup() {
  */
 void loop() {
 
-  // Modo "PAUSA"
+  // MODO PAUSA
+  // Simplemente se apagan todos los motores (bombas y succionadoras)
+  // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
   if (modo == MODO_PAUSA) {
     digitalWrite(PIN_INFLADOR_01, LOW);
     digitalWrite(PIN_INFLADOR_02, LOW);
@@ -78,17 +82,22 @@ void loop() {
     digitalWrite(PIN_ASPIRADOR_04, LOW);
     digitalWrite(A5, LOW);
 
+    delay(RETARDO);
+
     if (millis() > tiempo_fin) {
       modo = MODO_INFLACION;
-      tiempo_ini = millis();
+      tiempo_ini = millis() + RETARDO;
       tiempo_fin = tiempo_ini + random(MIN_INFLACION, MAX_INFLACION);
       Serial.print("Iniciando el modo INFLACIÓN - Duración=");
       Serial.println(tiempo_fin - tiempo_ini);
     }
   }
 
-  // Modo "INFLACIÓN"
-  else if (modo == MODO_INFLACION) {
+  // MODO INFLACIÓN
+  // Se envía la señal al controlador Darlington para activar las
+  // cuatro bombas. Al mismo tiempo, se apagan las succionadoras.
+  // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+  if (modo == MODO_INFLACION) {
     digitalWrite(PIN_INFLADOR_01, HIGH);
     digitalWrite(PIN_INFLADOR_02, HIGH);
     digitalWrite(PIN_INFLADOR_03, HIGH);
@@ -100,17 +109,22 @@ void loop() {
     digitalWrite(PIN_ASPIRADOR_04, LOW);
     digitalWrite(A5, LOW);
 
+    delay(RETARDO);
+
     if (millis() > tiempo_fin) {
       modo = MODO_ASPIRACION;
-      tiempo_ini = millis();
+      tiempo_ini = millis() + RETARDO;
       tiempo_fin = tiempo_ini + random(MIN_ASPIRACION, MAX_ASPIRACION);
       Serial.print("Iniciando el modo ASPIRACIÓN - Duración=");
       Serial.println(tiempo_fin - tiempo_ini);
     }
   }
 
-  // Modo "ASPIRACION"
-  else if (modo == MODO_ASPIRACION) {
+  // MODO ASPIRACIÓN
+  // Se envía la señal al controlador Darlington para activar las
+  // cuatro succionadoras. Al mismo tiempo, se apagan las bombas.
+  // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+  if (modo == MODO_ASPIRACION) {
     digitalWrite(PIN_INFLADOR_01, LOW);
     digitalWrite(PIN_INFLADOR_02, LOW);
     digitalWrite(PIN_INFLADOR_03, LOW);
@@ -122,9 +136,11 @@ void loop() {
     digitalWrite(PIN_ASPIRADOR_04, HIGH);
     digitalWrite(A5, HIGH);
 
+    delay(RETARDO);
+
     if (millis() > tiempo_fin) {
       modo = MODO_PAUSA;
-      tiempo_ini = millis();
+      tiempo_ini = millis() + RETARDO;
       tiempo_fin = tiempo_ini + random(MIN_PAUSA, MAX_PAUSA);
       Serial.print("Iniciando el modo PAUSA - Duración=");
       Serial.println(tiempo_fin - tiempo_ini);
